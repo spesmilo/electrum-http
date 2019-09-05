@@ -48,8 +48,7 @@ function getUrlParameter(sParam)
 var id = getUrlParameter('id');
 
 if (id) {
-    var uri_path = location.pathname;
-    var jqxhr = $.getJSON(uri_path.replace("electrum/index.html", "api/get_invoice?" +  id), function() {
+    var jqxhr = $.getJSON("/api/get_invoice?" +  id, function() {
         console.log("getJSON:success");
     })
     .done( function(data) {

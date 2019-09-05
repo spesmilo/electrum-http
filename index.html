@@ -98,6 +98,9 @@ if (id) {
             if(received_msg == 'paid'){
                 $("#container").html("This invoice has been paid.");
             }
+            if(received_msg == 'expired'){
+                $("#container").html("This invoice has expired.");
+            }
             /*else $("#status").html(received_msg);*/
         }
         ws.onerror = function () {

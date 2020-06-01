@@ -54,7 +54,7 @@ if (id) {
     .done( function(data) {
 	var qrcode = new QRCode(document.getElementById("qrcode"), {width:400, height:400});
 	var URI;
-	if (data.type == 2)
+	if (data.is_lightning)
 		URI = 'lightning:' + data.invoice;
 	else {
 		URI = data.URI;
@@ -68,8 +68,8 @@ if (id) {
         $(function () {
             var current;
             var max = 100;
-            var initial = data.time;
-            var duration = data.exp;
+            var initial = data.timestamp;
+            var duration = data.expiration;
             if(duration){
                    var current = 100 * (Math.floor(Date.now()/1000) - initial)/duration;
               $("#progressbar").progressbar({

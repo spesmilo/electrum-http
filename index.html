@@ -62,7 +62,7 @@ if (id) {
 	}
 	qrcode.makeCode(URI);
         $("<p />").text(data.message).appendTo($("p#reason"));
-        $("<p />").text(data.amount/100000000 + "BTC").appendTo($("p#amount"));
+        $("<p />").text(data.amount_BTC + " BTC").appendTo($("p#amount"));
         $("a").attr("href", URI);
         $("<p />").text("Powered by Electrum").appendTo($("p#powered"));
         $(function () {

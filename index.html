@@ -16,21 +16,32 @@
             href="jquery-ui-themes-1.12.1/themes/trontastic/jquery-ui.min.css">
     </head>
     <body>
-        <div id="container" style="width:20em; text-align:center; margin:auto; font-family:arial, serif;">
-            <p id="status"></p>
-            <p id="error"></p>
-            <p id="reason"></p>
-            <p id="amount"></p>
+      <div style="width:25em; margin:auto; font-family:arial, serif;">
+        <h2>Bitcoin Payment</h2>
+        <p id="status"></p>
+        <p id="error"></p>
+        <h3>Amount: <span id="amount"></span></h3>
+        <h3>Description: <span id="reason"></span></h3>
+	<div id="container">
+          <div id="progressbar"></div>
+          <br/>
+	  <div>
             <div style="background-color:#7777aa; border-radius: 5px; padding:10px;">
-                <a style="color:#ffffff; text-decoration:none;" id="paylink" target="_blank">Pay with Bitcoin</a>
+              <a style="color:#ffffff; text-decoration:none;" id="paylink" target="_blank">Click here to pay</a>
             </div>
-            <br/>
-            <div id="qrcode" align="center"></div>
-            <p id="powered" style="font-size:80%;"></p>
-            <div id="progressbar"></div>
-        </div>
-
+	  </div>
+          <p id="powered" style="font-size:80%;"></p>
+          <br/>
+	  <h3>Payment Request:</h3>
+	  <div id="payreq" style="word-break: break-word; color:#808080;"></div>
+	  <h3>QR Code:</h3>
+          <div id="qrcode" align="center"></div>
+	  <br/>
+	</div>
+      </div>
+	
 <script type="text/javascript">
+
 function getUrlParameter(sParam)
 {
     var sPageURL = window.location.search.substring(1);
@@ -54,16 +65,21 @@ if (id) {
     .done( function(data) {
 	var qrcode = new QRCode(document.getElementById("qrcode"), {width:400, height:400});
 	var URI;
-	if (data.is_lightning)
-		URI = 'lightning:' + data.invoice;
-	else {
+	var request;
+	if (data.is_lightning){
+		request = data.invoice;
+		URI = 'lightning:' + request;
+		qrcode.makeCode(data.invoice.toUpperCase());
+	} else {
 		URI = data.URI;
 		if (data.bip70_url) URI += '&r=' + data.bip70_url;
+		request = URI;
+		qrcode.makeCode(URI);
 	}
-	qrcode.makeCode(URI);
-        $("<p />").text(data.message).appendTo($("p#reason"));
-        $("<p />").text(data.amount_BTC + " BTC").appendTo($("p#amount"));
-        $("a").attr("href", URI);
+	$("#payreq").text(request);
+	$("#reason").text(data.message);
+        $("#amount").text(data.amount_BTC + " BTC");
+        $("#paylink").attr("href", URI);
         $("<p />").text("Powered by Electrum").appendTo($("p#powered"));
         $(function () {
             var current;
@@ -92,9 +108,10 @@ if (id) {
         var wss_address = (document.URL.startsWith("https") ? "wss" : "ws") + "://" + window.location.host +"/api/get_status?" + id;
         console.log("Opening WSS: " + wss_address)
         var ws = new WebSocket(wss_address);
+        var received_msg;
 
         ws.onmessage = function (evt) {
-            var received_msg = evt.data;
+            received_msg = evt.data;
             if(received_msg == 'paid'){
                 $("#container").html("This invoice has been paid.");
             }
@@ -105,17 +122,18 @@ if (id) {
         }
         ws.onerror = function () {
             console.log("error ws.onerror");
-            $("<p />").text("error with websocket. try reloading this page").appendTo($("p#error"));
+            $("#error").text("error with websocket. try reloading this page");
         };
         ws.onclose = function () {
             console.log("error ws.onclose");
-            $("<p />").text("error with websocket: socket was closed. try reloading this page").appendTo($("p#error"));
+            if(received_msg == 'waiting')
+              $("#error").text("error with websocket: socket was closed. try reloading this page");
         };
 
     })
     .fail(function() {
         console.log("error fail while fetching invoice json");
-        $("<p />").text("error while fetching invoice json. try reloading this page").appendTo($("p#error"));
+        $("#error").text("error while fetching invoice json. try reloading this page");
     });
 };
 

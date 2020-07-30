@@ -59,7 +59,7 @@ function getUrlParameter(sParam)
 var id = getUrlParameter('id');
 
 if (id) {
-    var jqxhr = $.getJSON("/api/get_invoice?" +  id, function() {
+    var jqxhr = $.getJSON("api/get_invoice?" +  id, function() {
         console.log("getJSON:success");
     })
     .done( function(data) {
@@ -105,7 +105,7 @@ if (id) {
              }
         });
 
-        var wss_address = (document.URL.startsWith("https") ? "wss" : "ws") + "://" + window.location.host +"/api/get_status?" + id;
+        var wss_address = document.URL.replace("http", "ws").match("(.*)/")[1] +  "/api/get_status?" + id;
         console.log("Opening WSS: " + wss_address)
         var ws = new WebSocket(wss_address);
         var received_msg;

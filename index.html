@@ -67,9 +67,9 @@ if (id) {
     var URI;
     var request;
     if (data.is_lightning){
-        request = data.invoice;
+        request = data.lightning_invoice;
         URI = 'lightning:' + request;
-        qrcode.makeCode(data.invoice.toUpperCase());
+        qrcode.makeCode(request.toUpperCase());
     } else {
         URI = data.URI;
         if (data.bip70_url) URI += '&r=' + data.bip70_url;
@@ -85,7 +85,7 @@ if (id) {
             var current;
             var max = 100;
             var initial = data.timestamp;
-            var duration = data.expiration;
+            var duration = data.expiration - data.timestamp;
             if(duration){
                    var current = 100 * (Math.floor(Date.now()/1000) - initial)/duration;
               $("#progressbar").progressbar({

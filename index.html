@@ -1,45 +1,45 @@
 <!DOCTYPE HTML>
 <html>
-    <head>
-      <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-      <title>Payment request</title>
-        <script type="text/javascript" charset="utf-8"
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Payment request</title>
+    <script type="text/javascript" charset="utf-8"
             src="jquery-3.4.1.min.js">
-        </script>
-        <script type="text/javascript"
+    </script>
+    <script type="text/javascript"
             src="jquery-ui.min.js">
-        </script>
-        <script type="text/javascript"
+    </script>
+    <script type="text/javascript"
             src="qrcode.js">
-        </script>
-        <link rel="stylesheet" type="text/css"
-            href="jquery-ui-themes-1.12.1/themes/trontastic/jquery-ui.min.css">
-    </head>
-    <body>
-      <div style="width:25em; margin:auto; font-family:arial, serif;">
+    </script>
+    <link rel="stylesheet" type="text/css"
+          href="jquery-ui-themes-1.12.1/themes/trontastic/jquery-ui.min.css">
+</head>
+<body>
+    <div style="width:25em; margin:auto; font-family:arial, serif;">
         <h2>Bitcoin Payment</h2>
         <p id="status"></p>
         <p id="error"></p>
         <h3>Amount: <span id="amount"></span></h3>
         <h3>Description: <span id="reason"></span></h3>
-	<div id="container">
-          <div id="progressbar"></div>
-          <br/>
-	  <div>
-            <div style="background-color:#7777aa; border-radius: 5px; padding:10px;">
-              <a style="color:#ffffff; text-decoration:none;" id="paylink" target="_blank">Click here to pay</a>
+        <div id="container">
+            <div id="progressbar"></div>
+            <br/>
+            <div>
+                <div style="background-color:#7777aa; border-radius: 5px; padding:10px;">
+                    <a style="color:#ffffff; text-decoration:none;" id="paylink" target="_blank">Click here to pay</a>
+                </div>
             </div>
-	  </div>
-          <p id="powered" style="font-size:80%;"></p>
-          <br/>
-	  <h3>Payment Request:</h3>
-	  <div id="payreq" style="word-break: break-word; color:#808080;"></div>
-	  <h3>QR Code:</h3>
-          <div id="qrcode" align="center"></div>
-	  <br/>
-	</div>
-      </div>
-	
+            <p id="powered" style="font-size:80%;"></p>
+            <br/>
+            <h3>Payment Request:</h3>
+            <div id="payreq" style="word-break: break-word; color:#808080;"></div>
+            <h3>QR Code:</h3>
+            <div id="qrcode" align="center"></div>
+            <br/>
+        </div>
+    </div>
+
 <script type="text/javascript">
 
 function getUrlParameter(sParam)
@@ -63,21 +63,21 @@ if (id) {
         console.log("getJSON:success");
     })
     .done( function(data) {
-	var qrcode = new QRCode(document.getElementById("qrcode"), {width:400, height:400});
-	var URI;
-	var request;
-	if (data.is_lightning){
-		request = data.invoice;
-		URI = 'lightning:' + request;
-		qrcode.makeCode(data.invoice.toUpperCase());
-	} else {
-		URI = data.URI;
-		if (data.bip70_url) URI += '&r=' + data.bip70_url;
-		request = URI;
-		qrcode.makeCode(URI);
-	}
-	$("#payreq").text(request);
-	$("#reason").text(data.message);
+    var qrcode = new QRCode(document.getElementById("qrcode"), {width:400, height:400});
+    var URI;
+    var request;
+    if (data.is_lightning){
+        request = data.invoice;
+        URI = 'lightning:' + request;
+        qrcode.makeCode(data.invoice.toUpperCase());
+    } else {
+        URI = data.URI;
+        if (data.bip70_url) URI += '&r=' + data.bip70_url;
+        request = URI;
+        qrcode.makeCode(URI);
+    }
+    $("#payreq").text(request);
+    $("#reason").text(data.message);
         $("#amount").text(data.amount_BTC + " BTC");
         $("#paylink").attr("href", URI);
         $("<p />").text("Powered by Electrum").appendTo($("p#powered"));
@@ -145,7 +145,8 @@ $(document).on('click', 'a[href^="bitcoin:"]', function (e) {
     return false;
 });
 
+
 </script>
-  
-    </body>
+
+</body>
 </html>

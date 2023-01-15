@@ -63,19 +63,25 @@ if (id) {
         console.log("getJSON:success");
     })
     .done( function(data) {
-    var qrcode = new QRCode(document.getElementById("qrcode"), {width:400, height:400});
     var URI;
+    var qr_text;
     var request;
     if (data.is_lightning){
         request = data.lightning_invoice;
         URI = 'lightning:' + request;
-        qrcode.makeCode(request.toUpperCase());
+        qr_text = request.toUpperCase();
     } else {
         URI = data.URI;
         if (data.bip70_url) URI += '&r=' + data.bip70_url;
         request = URI;
-        qrcode.makeCode(URI);
+        qr_text = URI;
     }
+    var typeNumber = 0;
+    var errorCorrectionLevel = 'L';
+    var qr = qrcode(typeNumber, errorCorrectionLevel);
+    qr.addData(qr_text);
+    qr.make();
+    document.getElementById('qrcode').innerHTML = qr.createImgTag();
     $("#payreq").text(request);
     $("#reason").text(data.message);
         $("#amount").text(data.amount_BTC + " BTC");

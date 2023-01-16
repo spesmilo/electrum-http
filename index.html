@@ -3,44 +3,180 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Payment request</title>
-    <script type="text/javascript" charset="utf-8"
-            src="vendor/jquery-3.4.1.min.js">
-    </script>
-    <script type="text/javascript"
-            src="vendor/jquery-ui.min.js">
-    </script>
-    <script type="text/javascript"
-            src="vendor/qrcode.js">
-    </script>
+    <script type="text/javascript" charset="utf-8" src="vendor/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript" src="vendor/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="vendor/qrcode.js"></script>
     <link rel="stylesheet" type="text/css"
-          href="vendor/jquery-ui-themes-1.12.1/themes/trontastic/jquery-ui.min.css">
+          href="vendor/jquery-ui-themes-1.12.1/themes/ui-lightness/jquery-ui.css">
+    <style type="text/css">
+
+      body {
+	  font-family: Arial;
+      }
+
+      .tab {
+	  overflow: hidden;
+	  border: 1px solid #ccc;
+	  background-color: #f1f1f1;
+      }
+      .tab button {
+	  background-color: inherit;
+	  float: left;
+	  border: none;
+	  outline: none;
+	  cursor: pointer;
+	  padding: 14px 16px;
+	  transition: 0.3s;
+      }
+      .tab button:hover {
+	  background-color: #ddd;
+      }
+      .tab button.active {
+	  background-color: #ccc;
+      }
+      .tabcontent {
+	  display: none;
+	  padding: 6px 12px;
+	  border: 1px solid #ccc;
+	  border-top: none;
+      }
+      .column {
+	  float: left;
+	  width: 50%;
+      }
+      .row{
+	  padding: 26px 26px;
+	  border: 1px solid #ccc;
+      }
+      .row:after {
+	  content: "";
+	  display: table;
+	  clear: both;
+      }
+      .paybutton{
+	  width:100%;
+	  background-color:#ccc;
+	  border-radius: 5px;
+	  padding:10px;
+      }
+      #progressbar {
+	  position: relative;
+	  background: #555;
+      }
+      .progress-label {
+	  position: absolute;
+	  top: 8px;
+	  color: #fff;
+	  font-weight: bold;
+	  text-shadow: 1px 1px 0 #000;
+      }
+    </style>
 </head>
 <body>
-    <div style="width:25em; margin:auto; font-family:arial, serif;">
-        <h2>Bitcoin Payment</h2>
-        <p id="status"></p>
-        <p id="error"></p>
-        <h3>Amount: <span id="amount"></span></h3>
-        <h3>Description: <span id="reason"></span></h3>
+    <div style="width:20em; margin:auto; font-family:arial, serif;">
+        <div class="error" id="error"></div>
         <div id="container">
-            <div id="progressbar"></div>
-            <br/>
+	  <div id="progressbar">
+	    <div class="progress-label" style="left: 5%;" id="progress-text"></div>
+	    <div class="progress-label" style="right: 5%;" id="progress-timer"></div>
+	  </div>
+	  <div class="row">
+	    <div id="reason" style="float:left; width:50%"></div>
+	    <div id="amount" style="float:right; width:50%"></div>
+	  </div>
+	  <!-- Tab links -->
+	  <div class="tab">
+	    <button id="onchain_button"   class="tablinks" onclick="openTab('onchain')">On-chain</button>
+	    <button id="lightning_button" class="tablinks" onclick="openTab('lightning')">Lightning</button>
+	  </div>
+	  <!-- Tab content -->
+	  <div id="lightning" class="tabcontent">
+            <div id="qr1" align="center"></div>
+            <div class="error" id="lnerror" style="height:15em; text-align:justify;"></div>
             <div>
-                <div style="background-color:#7777aa; border-radius: 5px; padding:10px;">
-                    <a style="color:#ffffff; text-decoration:none;" id="paylink" target="_blank">Click here to pay</a>
-                </div>
+              <button class="paybutton">
+                <a style="color:#000; text-decoration:none;" id="paylink1" target="_blank">Open in Wallet</a>
+              </button>
+	    </div>
+	    <div>
+              <button id="copy1" class="paybutton" onclick="doCopy(this.value)" value="">
+                Copy Lightning Request
+              </button>
             </div>
-            <p id="powered" style="font-size:80%;"></p>
-            <br/>
-            <h3>Payment Request:</h3>
-            <div id="payreq" style="word-break: break-word; color:#808080;"></div>
-            <h3>QR Code:</h3>
-            <div id="qrcode" align="center"></div>
-            <br/>
+	  </div>
+	  <div id="onchain" class="tabcontent">
+            <div id="qr2" align="center"></div>
+            <div>
+              <button class="paybutton">
+                <a style="color:#000; text-decoration:none;" id="paylink2" target="_blank">Open in Wallet</a>
+              </button>
+	    </div>
+	    <div>
+              <button id="copy2" class="paybutton" onclick="doCopy(this.value)" value="">
+                Copy Bitcoin URI
+              </button>
+            </div>
+	  </div>
+          <p id="powered" style="font-size:80%;"></p>
         </div>
     </div>
+    <script type="text/javascript">
 
-<script type="text/javascript">
+function doCopy(text){
+    navigator.clipboard.writeText(text);
+    alert("Copied to Clipboard: " + text);	  
+}
+
+function openTab(tabName){
+    $(".tabcontent").hide();
+    $(".tablinks").removeClass("active");
+    $("#"+tabName).show();
+    $("#"+tabName+"_button").addClass("active");
+}
+
+function paymentExpired(){
+    $(".tabcontent").hide();
+    $(".tablinks").removeClass("active");
+    $("#progress-text").html("This invoice has expired");
+    $(".ui-widget-header").css("background", "#f33");
+}
+
+function paymentReceived(){
+    $(".tabcontent").hide();
+    $(".tablinks").removeClass("active");
+    $("#progress-text").html("Payment received.");
+    $(".ui-widget-header").css("background", "#0a0");
+    payment_received = true;
+    $("#progress-timer").text("");
+    $("#progressbar").progressbar({
+	value: 100,
+	max: 100
+    });
+}
+function paymentUnknown(){
+    $("#progress-text").html('Error: Unknown invoice');
+    $("#progressbar").progressbar({
+	value: 100,
+	max:100
+    });
+    $(".ui-widget-header").css("background", "#f33");
+}
+
+function formatTime(timeInSeconds) {
+    var hours = Math.floor(timeInSeconds / 3600);
+    var minutes = Math.floor((timeInSeconds - (hours * 3600)) / 60);
+    var seconds = timeInSeconds - (hours * 3600) - (minutes * 60);
+    if (hours < 10) {
+        hours = "0" + hours;
+    }
+    if (minutes < 10) {
+        minutes = "0" + minutes;
+    }
+    if (seconds < 10) {
+        seconds = "0" + seconds;
+    }
+    return hours + ":" + minutes + ":" + seconds;
+}
 
 function getUrlParameter(sParam)
 {
@@ -57,74 +193,99 @@ function getUrlParameter(sParam)
 }
 
 var id = getUrlParameter('id');
+var payment_received = false;
 
 if (id) {
     var jqxhr = $.getJSON("/api/get_invoice?" +  id, function() {
         console.log("getJSON:success");
     })
-    .done( function(data) {
+    .done(function(data) {
+    var typeNumber = 0;
+    var errorCorrectionLevel = 'L';
     var URI;
-    var qr_text;
     var request;
+    $("<p />").text("Powered by Electrum").appendTo($("p#powered"));
+    if(!data) {
+	paymentUnknown();
+	return;
+    }
     if (data.is_lightning){
-        request = data.lightning_invoice;
-        URI = 'lightning:' + request;
-        qr_text = request.toUpperCase();
-    } else {
+	if (data.can_receive){
+            request = data.lightning_invoice;
+            URI = 'lightning:' + request;
+	    var qr1 = qrcode(typeNumber, errorCorrectionLevel);
+	    qr1.addData(request.toUpperCase());
+	    qr1.make();
+	    $("#payreq1").text(request);
+	    $("#qr1").html(qr1.createImgTag(3));
+	    $("#copy1").val(request);
+            $("#paylink1").attr("href", URI);
+            $("#lnerror").hide();
+	} else {
+	    $("#lnerror").text("Error: The server does not have enough inbound capacity to receive this amount with lightning. Try reloading this page later, or pay onchain.");
+	    $(".tabcontent").hide();
+	}
+    }
+    if (data.URI){
         URI = data.URI;
         if (data.bip70_url) URI += '&r=' + data.bip70_url;
         request = URI;
-        qr_text = URI;
+	var qr2 = qrcode(typeNumber, errorCorrectionLevel);
+	qr2.addData(URI);
+	qr2.make();
+	$("#payreq2").text(request);
+	$("#qr2").html(qr2.createImgTag(6));
+	$("#copy2").val(URI);
+        $("#paylink2").attr("href", URI);
     }
-    var typeNumber = 0;
-    var errorCorrectionLevel = 'L';
-    var qr = qrcode(typeNumber, errorCorrectionLevel);
-    qr.addData(qr_text);
-    qr.make();
-    document.getElementById('qrcode').innerHTML = qr.createImgTag();
-    $("#payreq").text(request);
-    $("#reason").text(data.message);
+        $("#reason").text(data.message || "no description");
         $("#amount").text(data.amount_BTC + " BTC");
-        $("#paylink").attr("href", URI);
-        $("<p />").text("Powered by Electrum").appendTo($("p#powered"));
         $(function () {
             var current;
             var max = 100;
             var initial = data.timestamp;
             var duration = data.expiration - data.timestamp;
-            if(duration){
-                   var current = 100 * (Math.floor(Date.now()/1000) - initial)/duration;
-              $("#progressbar").progressbar({
-                value: current,
-                max: max
-              });
-              function update() {
-                current = 100 * (Math.floor(Date.now()/1000) - initial)/duration;
-                $("#progressbar").progressbar({
-                    value: current
-                });
-                if (current >= max) {
-                    $("#container").html("This invoice has expired");
-                }
-              };
-              var interval = setInterval(update, 1000);
-             }
+	    $("#progressbar").progressbar({
+		value: 100,
+		max:max
+	    });
+	    $("#progress-text").text("Awaiting payment...");
+            if(data.expiration){
+		function update() {
+                    var seconds = (Math.floor(Date.now()/1000) - initial);
+                    var current = 100 * (seconds)/duration;
+		    var remaining = duration - seconds
+		    if(!payment_received){
+			$("#progressbar").progressbar({
+			    value: current,
+			    max:max
+			});
+			if (current < max) {
+			    $("#progress-timer").text(formatTime(remaining));
+			}
+		    }
+		};
+		update();
+		var interval = setInterval(update, 1000);
+            }
         });
-
+	if(data.is_lightning){
+	    openTab('lightning');
+	}else{
+	    openTab('onchain');
+	}
         var wss_address = (document.URL.startsWith("https") ? "wss" : "ws") + "://" + window.location.host +"/api/get_status?" + id;
         console.log("Opening WSS: " + wss_address)
         var ws = new WebSocket(wss_address);
         var received_msg;
-
         ws.onmessage = function (evt) {
             received_msg = evt.data;
             if(received_msg == 'paid'){
-                $("#container").html("This invoice has been paid.");
+		paymentReceived();
             }
             if(received_msg == 'expired'){
-                $("#container").html("This invoice has expired.");
+		paymentExpired();
             }
-            /*else $("#status").html(received_msg);*/
         }
         ws.onerror = function () {
             console.log("error ws.onerror");
@@ -152,7 +313,6 @@ $(document).on('click', 'a[href^="bitcoin:"]', function (e) {
 });
 
 
-</script>
-
+    </script>
 </body>
 </html>

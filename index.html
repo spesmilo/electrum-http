@@ -106,6 +106,7 @@
 	  </div>
 	  <div id="onchain" class="tabcontent">
             <div id="qr2" align="center"></div>
+            <div class="error" id="onchainerror" style="height:15em; text-align:justify;"></div>
             <div>
               <button class="paybutton">
                 <a style="color:#000; text-decoration:none;" id="paylink2" target="_blank">Open in Wallet</a>
@@ -226,7 +227,7 @@ if (id) {
 	    $(".tabcontent").hide();
 	}
     }
-    if (data.URI){
+    if (data.address){
         URI = data.URI;
         if (data.bip70_url) URI += '&r=' + data.bip70_url;
         request = URI;
@@ -237,6 +238,10 @@ if (id) {
 	$("#qr2").html(qr2.createImgTag(6));
 	$("#copy2").val(URI);
         $("#paylink2").attr("href", URI);
+        $("#onchainerror").hide();
+    } else {
+	$("#onchainerror").text("This request cannot be paid on-chain.");
+	$(".tabcontent").hide();
     }
         $("#reason").text(data.message || "no description");
         $("#amount").text(data.amount_BTC + " BTC");
@@ -269,9 +274,9 @@ if (id) {
 		var interval = setInterval(update, 1000);
             }
         });
-	if(data.is_lightning){
+	if(data.is_lightning) {
 	    openTab('lightning');
-	}else{
+	} else {
 	    openTab('onchain');
 	}
         var wss_address = (document.URL.startsWith("https") ? "wss" : "ws") + "://" + window.location.host +"/api/get_status?" + id;
@@ -280,10 +285,10 @@ if (id) {
         var received_msg;
         ws.onmessage = function (evt) {
             received_msg = evt.data;
-            if(received_msg == 'paid'){
+            if(received_msg == 'paid') {
 		paymentReceived();
             }
-            if(received_msg == 'expired'){
+            if(received_msg == 'expired') {
 		paymentExpired();
             }
         }

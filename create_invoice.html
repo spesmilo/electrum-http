@@ -2,11 +2,33 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <style type="text/css">
+      body {
+	  font-family: Arial;
+      }
+      form {
+      }
+      input {
+	  border: 2px solid #ccc;
+	  padding: 12px 20px;
+      }
+  </style>
   </head>
   <body>
-    <form method=POST action=/api/create_invoice>
-      <input name="amount_sat" placeholder="amount (satoshis)">
-      <input name="message" placeholder="message">
-      <input type=submit value="Submit">
+    <div style="width:30em; margin:auto;">
+      <p>This is a sample web interface that lets you create on-chain
+	and lightning invoices to your Electrum wallet. You can use it
+	with an electrum daemon running on a webserver. The lightning
+	invoice will be replaced by an error message if your wallet is
+	disconnected or does not have enough inbound liquidity to
+	receive the requested amount. The on-chain invoice will not be
+	displayed if the amount is too small to be received onchain.
+      </p>
+      <form method=POST action=/api/create_invoice>
+	<input name="message" placeholder="description"><br/>
+	<input type="number" min="1" name="amount_sat" placeholder="amount (satoshis)" ><br/>
+	<input type="submit" value="Create invoice"><br/>
+      </form>
+    </div>
   </body>
 </html>

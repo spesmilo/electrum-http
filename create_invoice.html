@@ -27,7 +27,8 @@
       <form method=POST action=/api/create_invoice>
 	<input name="message" placeholder="description"><br/>
 	<input type="number" min="1" name="amount_sat" placeholder="amount (satoshis)" ><br/>
-	<input type="submit" value="Create invoice"><br/>
+	<input type="submit" name="onchain" value="Create onchain invoice">
+	<input type="submit" name="lightning" value="Create lightning invoice"><br/>
       </form>
     </div>
   </body>

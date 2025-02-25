@@ -35,7 +35,6 @@
 	  background-color: #ccc;
       }
       .tabcontent {
-	  display: none;
 	  padding: 6px 12px;
 	  border: 1px solid #ccc;
 	  border-top: none;
@@ -58,6 +57,9 @@
 	  background-color:#ccc;
 	  border-radius: 5px;
 	  padding:10px;
+      }
+      #payreq{
+	  overflow-wrap: break-word;
       }
       #progressbar {
 	  position: relative;
@@ -84,37 +86,20 @@
 	    <div id="reason" style="float:left; width:50%"></div>
 	    <div id="amount" style="float:right; width:50%"></div>
 	  </div>
-	  <!-- Tab links -->
-	  <div class="tab">
-	    <button id="onchain_button"   class="tablinks" onclick="openTab('onchain')">On-chain</button>
-	    <button id="lightning_button" class="tablinks" onclick="openTab('lightning')">Lightning</button>
-	  </div>
 	  <!-- Tab content -->
 	  <div id="lightning" class="tabcontent">
-            <div id="qr1" align="center"></div>
-            <div class="error" id="lnerror" style="height:15em; text-align:justify;"></div>
+            <div id="qr" align="center"></div>
+            <div id="payreq" align="left"></div>
+	    <br/>
+            <div class="error" id="lnerror" style="height:15em; text-align:justify; display:none;"></div>
             <div>
               <button class="paybutton">
-                <a style="color:#000; text-decoration:none;" id="paylink1" target="_blank">Open in Wallet</a>
+                <a style="color:#000; text-decoration:none;" id="paylink" target="_blank">Open in Wallet</a>
               </button>
 	    </div>
 	    <div>
-              <button id="copy1" class="paybutton" onclick="doCopy(this.value)" value="">
-                Copy Lightning Request
-              </button>
-            </div>
-	  </div>
-	  <div id="onchain" class="tabcontent">
-            <div id="qr2" align="center"></div>
-            <div class="error" id="onchainerror" style="height:15em; text-align:justify;"></div>
-            <div>
-              <button class="paybutton">
-                <a style="color:#000; text-decoration:none;" id="paylink2" target="_blank">Open in Wallet</a>
-              </button>
-	    </div>
-	    <div>
-              <button id="copy2" class="paybutton" onclick="doCopy(this.value)" value="">
-                Copy Bitcoin URI
+              <button id="copy" class="paybutton" onclick="doCopy(this.value)" value="">
+                Copy Request
               </button>
             </div>
 	  </div>
@@ -125,14 +110,7 @@
 
 function doCopy(text){
     navigator.clipboard.writeText(text);
-    alert("Copied to Clipboard: " + text);	  
-}
-
-function openTab(tabName){
-    $(".tabcontent").hide();
-    $(".tablinks").removeClass("active");
-    $("#"+tabName).show();
-    $("#"+tabName+"_button").addClass("active");
+    alert("Copied to Clipboard: " + text);
 }
 
 function paymentExpired(){
@@ -202,124 +180,112 @@ if (id) {
     var jqxhr = $.getJSON("/api/get_invoice?" +  id, function() {
         console.log("getJSON:success");
     })
-    .done(function(data) {
-    var typeNumber = 0;
-    var errorCorrectionLevel = 'L';
-    var URI;
-    var request;
-    $("<p />").text("Powered by Electrum").appendTo($("p#powered"));
-    if(!data) {
-	paymentUnknown();
-	return;
-    }
-    if (data.is_lightning){
-	if (data.can_receive){
-            request = data.lightning_invoice;
-            URI = 'lightning:' + request;
-	    var qr1 = qrcode(typeNumber, errorCorrectionLevel);
-	    qr1.addData(request.toUpperCase());
-	    qr1.make();
-	    $("#payreq1").text(request);
-	    $("#qr1").html(qr1.createImgTag(3));
-	    $("#copy1").val(request);
-            $("#paylink1").attr("href", URI);
-            $("#lnerror").hide();
-	} else {
-	    $("#lnerror").text("Error: The server does not have enough inbound capacity to receive this amount with lightning. Try reloading this page later, or pay onchain.");
-	    $(".tabcontent").hide();
-	}
-    }
-    if (data.address){
-        URI = data.URI;
-        if (data.bip70_url) URI += '&r=' + data.bip70_url;
-        request = URI;
-	var qr2 = qrcode(typeNumber, errorCorrectionLevel);
-	qr2.addData(URI);
-	qr2.make();
-	$("#payreq2").text(request);
-	$("#qr2").html(qr2.createImgTag(6));
-	$("#copy2").val(URI);
-        $("#paylink2").attr("href", URI);
-        $("#onchainerror").hide();
-    } else {
-	$("#onchainerror").text("This request cannot be paid on-chain.");
-	$(".tabcontent").hide();
-    }
-        $("#reason").text(data.message || "no description");
-        $("#amount").text(data.amount_BTC + " BTC");
-        $(function () {
-            var current;
-            var max = 100;
-            var initial = data.timestamp;
-            var duration = data.expiration - data.timestamp;
-	    $("#progressbar").progressbar({
-		value: 100,
-		max:max
-	    });
-	    $("#progress-text").text("Awaiting payment...");
-            if(data.expiration){
-		function update() {
-                    var seconds = (Math.floor(Date.now()/1000) - initial);
-                    var current = 100 * (seconds)/duration;
-		    var remaining = duration - seconds
-		    if(!payment_received){
-			$("#progressbar").progressbar({
-			    value: current,
-			    max:max
-			});
-			if (current < max) {
-			    $("#progress-timer").text(formatTime(remaining));
+	.done(function(data) {
+	    var typeNumber = 0;
+	    var errorCorrectionLevel = 'L';
+	    var URI;
+	    var request;
+	    var qr_text;
+	    $("<p />").text("Powered by Electrum").appendTo($("p#powered"));
+	    if(!data) {
+		paymentUnknown();
+		return;
+	    }
+	    if (data.is_lightning && !data.can_receive){
+		$("#lnerror").text("Error: The server does not have enough inbound capacity to receive this amount with lightning. Try reloading this page later.");
+		$(".tabcontent").hide();
+		return;
+	    }
+	    if (data.is_lightning){
+		request = data.lightning_invoice;
+		URI = 'lightning:' + data.lightning_invoice;
+		qr_text = request.toUpperCase();
+	    }
+	    else if (data.URI){
+		request = data.URI;
+		if (data.bip70_url) request += '&r=' + data.bip70_url;
+		qr_text = request;
+		URI = request;
+	    }
+	    else {
+		request = data.address;
+		qr_text = request;
+		URI = 'bitcoin:' + data.address;
+            }
+            var qr = qrcode(typeNumber, errorCorrectionLevel);
+            qr.addData(qr_text);
+            qr.make();
+            $("#payreq").text(URI);
+            $("#qr").html(qr.createImgTag(3));
+            $("#copy").val(request);
+            $("#paylink").attr("href", URI);
+            $("#error").hide();
+            $("#reason").text(data.message || "no description");
+            $("#amount").text(data.amount_BTC + " BTC");
+            $(function () {
+		var current;
+		var max = 100;
+		var initial = data.timestamp;
+		var duration = data.expiration - data.timestamp;
+		$("#progressbar").progressbar({
+		    value: 100,
+		    max:max
+		});
+		$("#progress-text").text("Awaiting payment...");
+		if(data.expiration){
+		    function update() {
+			var seconds = (Math.floor(Date.now()/1000) - initial);
+			var current = 100 * (seconds)/duration;
+			var remaining = duration - seconds
+			if(!payment_received){
+			    $("#progressbar").progressbar({
+				value: current,
+				max:max
+			    });
+			    if (current < max) {
+				$("#progress-timer").text(formatTime(remaining));
+			    }
 			}
-		    }
-		};
-		update();
-		var interval = setInterval(update, 1000);
+		    };
+		    update();
+		    var interval = setInterval(update, 1000);
+		}
+            });
+            var wss_address = (document.URL.startsWith("https") ? "wss" : "ws") + "://" + window.location.host +"/api/get_status?" + id;
+            console.log("Opening WSS: " + wss_address)
+            var ws = new WebSocket(wss_address);
+            var received_msg;
+            ws.onmessage = function (evt) {
+		received_msg = evt.data;
+		if(received_msg == 'paid') {
+		    paymentReceived();
+		}
+		if(received_msg == 'expired') {
+		    paymentExpired();
+		}
             }
-        });
-	if(data.is_lightning) {
-	    openTab('lightning');
-	} else {
-	    openTab('onchain');
-	}
-        var wss_address = (document.URL.startsWith("https") ? "wss" : "ws") + "://" + window.location.host +"/api/get_status?" + id;
-        console.log("Opening WSS: " + wss_address)
-        var ws = new WebSocket(wss_address);
-        var received_msg;
-        ws.onmessage = function (evt) {
-            received_msg = evt.data;
-            if(received_msg == 'paid') {
-		paymentReceived();
-            }
-            if(received_msg == 'expired') {
-		paymentExpired();
-            }
-        }
-        ws.onerror = function () {
-            console.log("error ws.onerror");
-            $("#error").text("error with websocket. try reloading this page");
-        };
-        ws.onclose = function () {
-            console.log("error ws.onclose");
-            if(received_msg == 'waiting')
-              $("#error").text("error with websocket: socket was closed. try reloading this page");
-        };
-
-    })
-    .fail(function() {
-        console.log("error fail while fetching invoice json");
-        $("#error").text("error while fetching invoice json. try reloading this page");
-    });
+            ws.onerror = function () {
+		console.log("error ws.onerror");
+		$("#error").text("error with websocket. try reloading this page");
+            };
+            ws.onclose = function () {
+		console.log("error ws.onclose");
+		if(received_msg == 'waiting')
+		    $("#error").text("error with websocket: socket was closed. try reloading this page");
+            };
+	})
+	.fail(function() {
+            console.log("error fail while fetching invoice json");
+            $("#error").text("error while fetching invoice json. try reloading this page");
+	});
 };
-
-// See http://stackoverflow.com/questions/29186154/chrome-clicking-mailto-links-closes-websocket-connection
-$(document).on('click', 'a[href^="bitcoin:"]', function (e) {
-    e.preventDefault();
-    var btcWindow = window.open($(e.currentTarget).attr('href'));
-    btcWindow.close();
-    return false;
-});
-
-
+      // See http://stackoverflow.com/questions/29186154/chrome-clicking-mailto-links-closes-websocket-connection
+      $(document).on('click', 'a[href^="bitcoin:"]', function (e) {
+	  e.preventDefault();
+	  var btcWindow = window.open($(e.currentTarget).attr('href'));
+	  btcWindow.close();
+	  return false;
+      });
     </script>
 </body>
 </html>
